@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import gspread
 from google.oauth2.service_account import Credentials
 import pandas as pd
@@ -33,13 +34,38 @@ st.set_page_config(page_title="MB 매물 조회", page_icon="🚗", layout="cent
 
 st.markdown("""
 <style>
-    .card {
-        background: #1e1e2e;
-        border-radius: 12px;
-        padding: 16px 20px;
-        margin-bottom: 14px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-        border-left: 4px solid #e63946;
+    /* 카드 컨테이너 */
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        background: #1e1e2e !important;
+        border-left: 4px solid #e63946 !important;
+        border-top: 1px solid #313244 !important;
+        border-right: 1px solid #313244 !important;
+        border-bottom: 1px solid #313244 !important;
+        border-radius: 12px !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important;
+        margin-bottom: 10px;
+    }
+    /* st.code → 번호판 배지 스타일 */
+    [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stCode"] {
+        background: #313244 !important;
+        border-radius: 6px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stCode"] pre {
+        background: #313244 !important;
+        border-radius: 6px !important;
+        padding: 3px 10px !important;
+        margin: 0 !important;
+    }
+    [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stCode"] code {
+        color: #cba6f7 !important;
+        font-weight: 700 !important;
+        font-size: 15px !important;
+    }
+    /* 복사 버튼 */
+    [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stCode"] button {
+        opacity: 0.6;
     }
     .card-row {
         display: flex;
@@ -64,23 +90,11 @@ st.markdown("""
         color: #a6adc8;
         font-size: 14px;
     }
-    .plate {
-        background: #313244;
-        border-radius: 6px;
-        padding: 2px 8px;
-        font-weight: 700;
-        font-size: 15px;
-        color: #cba6f7;
-        cursor: pointer;
-        user-select: none;
-        transition: opacity 0.15s;
-    }
-    .plate:active { opacity: 0.6; }
     .card-title {
         font-size: 16px;
         font-weight: 700;
         color: #cdd6f4;
-        margin-bottom: 10px;
+        margin-bottom: 6px;
     }
     .result-count {
         color: #a6adc8;
@@ -162,39 +176,62 @@ def render_card(row):
     title = " ".join(filter(None, [str(submodel), str(grade), str(subgrade)]))
     reg_info = "/".join(filter(None, [str(reg_year), str(reg_month), str(reg_date)]))
 
-    st.markdown(f"""
+    components.html(f"""
+    <style>
+        * {{ box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }}
+        .card {{
+            background: #1e1e2e;
+            border-radius: 12px;
+            padding: 14px 18px;
+            border-left: 4px solid #e63946;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        }}
+        .card-title {{ font-size: 15px; font-weight: 700; color: #cdd6f4; margin-bottom: 10px; }}
+        .row {{ display: flex; flex-wrap: wrap; gap: 6px 16px; margin-bottom: 6px; align-items: center; }}
+        .label {{ color: #888; font-size: 11px; }}
+        .val {{ color: #cdd6f4; font-size: 13px; }}
+        .plate {{
+            background: #313244; border-radius: 6px; padding: 3px 10px;
+            font-weight: 700; font-size: 15px; color: #cba6f7;
+            cursor: pointer; user-select: none; transition: opacity 0.15s;
+            display: inline-block;
+        }}
+        .plate:active {{ opacity: 0.6; }}
+        .owner {{ color: #a6adc8; font-size: 14px; }}
+        .mbprice {{ color: #e63946; font-weight: 900; font-size: 22px; }}
+    </style>
     <div class="card">
         <div class="card-title">{title}</div>
-        <div class="card-row">
-            <span class="plate" onclick="(function(el, txt){{
+        <div class="row">
+            <span class="plate" onclick="(function(el){{
+                var txt = '{plate}';
                 var prev = el.innerText;
-                if(navigator.clipboard && navigator.clipboard.writeText){{
-                    navigator.clipboard.writeText(txt).then(function(){{
-                        el.innerText = '✓ 복사됨';
-                        setTimeout(function(){{ el.innerText = prev; }}, 1200);
-                    }});
-                }} else {{
-                    var ta = document.createElement('textarea');
-                    ta.value = txt; document.body.appendChild(ta);
-                    ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
-                    el.innerText = '✓ 복사됨';
-                    setTimeout(function(){{ el.innerText = prev; }}, 1200);
+                function done(){{ el.innerText='✓ 복사됨'; setTimeout(function(){{el.innerText=prev;}},1400); }}
+                function fb(){{
+                    var t=document.createElement('textarea');
+                    t.value=txt; t.setAttribute('readonly','');
+                    t.style.cssText='position:fixed;top:0;left:0;width:2em;height:2em;opacity:0;';
+                    document.body.appendChild(t); t.focus(); t.select();
+                    try{{document.execCommand('copy');done();}}catch(e){{}}
+                    document.body.removeChild(t);
                 }}
-            }})(this, '{plate}')">{plate}</span>
-            <span class="card-item"><span class="card-label">연식 </span>{modelyear}</span>
-            <span class="card-item"><span class="card-label">등록 </span>{reg_info}</span>
+                if(navigator.clipboard&&window.isSecureContext){{navigator.clipboard.writeText(txt).then(done,fb);}}
+                else{{fb();}}
+            }})(this)">{plate}</span>
+            <span class="val"><span class="label">연식 </span>{modelyear}</span>
+            <span class="val"><span class="label">등록 </span>{reg_info}</span>
         </div>
-        <div class="card-row">
-            <span class="card-item"><span class="card-label">주행 </span>{mileage}</span>
-            <span class="card-item"><span class="card-label">연료 </span>{fuel}</span>
-            <span class="card-item"><span class="card-label">상태 </span>{status}</span>
+        <div class="row">
+            <span class="val"><span class="label">주행 </span>{mileage}</span>
+            <span class="val"><span class="label">연료 </span>{fuel}</span>
+            <span class="val"><span class="label">상태 </span>{status}</span>
         </div>
-        <div class="card-row" style="margin-top:10px; align-items:baseline; gap:14px;">
-            <span class="owner-price">오너가 {ownerprice}</span>
-            <span class="mb-price">MB {mbprice}</span>
+        <div class="row" style="margin-top:8px; align-items:baseline; gap:14px;">
+            <span class="owner">오너가 {ownerprice}</span>
+            <span class="mbprice">MB {mbprice}</span>
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """, height=170)
 
 
 if check_password():
