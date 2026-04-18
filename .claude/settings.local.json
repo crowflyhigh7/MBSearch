@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip show *)",
+      "Bash(python -m streamlit run d:/Projects/MBSearch/app.py --server.headless true)",
+      "Bash(curl -s http://localhost:8501)"
+    ]
+  }
+}
