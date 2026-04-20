@@ -159,6 +159,7 @@ def render_card(row):
     grade = row.get("cat_grade", "")
     subgrade = row.get("cat_subgrade", "")
     plate = row.get("platenumber", "")
+    stock_id = str(row.get("stock_id", "")).strip()
     modelyear = row.get("modelyear", "")
     reg_year = row.get("reg_year", "")
     reg_month = row.get("reg_month", "")
@@ -186,7 +187,16 @@ def render_card(row):
             border-left: 4px solid #e63946;
             box-shadow: 0 2px 8px rgba(0,0,0,0.4);
         }}
-        .card-title {{ font-size: 15px; font-weight: 700; color: #cdd6f4; margin-bottom: 10px; }}
+        .card-header {{ display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }}
+        .card-title {{ font-size: 15px; font-weight: 700; color: #cdd6f4; }}
+        .link-btn {{
+            width: 28px; height: 28px; flex-shrink: 0;
+            background: #313244; border: none; border-radius: 6px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: background 0.15s;
+        }}
+        .link-btn:hover {{ background: #45475a; }}
+        .link-btn svg {{ width: 14px; height: 14px; stroke: #cba6f7; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }}
         .row {{ display: flex; flex-wrap: wrap; gap: 6px 16px; margin-bottom: 6px; align-items: center; }}
         .label {{ color: #888; font-size: 11px; }}
         .val {{ color: #cdd6f4; font-size: 13px; }}
@@ -201,7 +211,17 @@ def render_card(row):
         .mbprice {{ color: #e63946; font-weight: 900; font-size: 22px; }}
     </style>
     <div class="card">
-        <div class="card-title">{title}</div>
+        <div class="card-header">
+            <div class="card-title">{title}</div>
+            <button class="link-btn" onclick="(function(){{
+                var url='https://www.mobettercar.kr/detail?id={stock_id}';
+                window.open(url,'_blank');
+                if(navigator.clipboard&&window.isSecureContext){{navigator.clipboard.writeText(url);}}
+                else{{var t=document.createElement('textarea');t.value=url;t.style.cssText='position:fixed;opacity:0;';document.body.appendChild(t);t.focus();t.select();try{{document.execCommand('copy');}}catch(e){{}}document.body.removeChild(t);}}
+            }})()" title="매물 상세 보기">
+                <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            </button>
+        </div>
         <div class="row">
             <span class="plate" onclick="(function(el){{
                 var txt = '{plate}';
