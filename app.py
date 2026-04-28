@@ -173,9 +173,17 @@ def render_card(row):
     status = row.get("status", "")
     ownerprice = format_number(row.get("ownerprice", ""))
     mbprice = format_number(row.get("mbprice", ""))
+    owner_name = str(row.get("owner_name", "")).strip()
+    owner_phone = str(row.get("owner_phone", "")).strip()
 
     title = " ".join(filter(None, [str(submodel), str(grade), str(subgrade)]))
     reg_info = "/".join(filter(None, [str(reg_year), str(reg_month), str(reg_date)]))
+
+    phone_svg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a6e3a1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.82a16 16 0 0 0 6.29 6.29l.97-.97a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>'
+    if owner_phone:
+        call_btn_html = f'<div class="row" style="margin-top:6px;"><a class="call-btn" href="tel:{owner_phone}">{phone_svg} {owner_name} / {owner_phone}</a></div>'
+    else:
+        call_btn_html = ""
 
     components.html(f"""
     <style>
@@ -209,6 +217,13 @@ def render_card(row):
         .plate:active {{ opacity: 0.6; }}
         .owner {{ color: #a6adc8; font-size: 14px; }}
         .mbprice {{ color: #e63946; font-weight: 900; font-size: 22px; }}
+        .call-btn {{
+            display: inline-flex; align-items: center; gap: 6px;
+            background: #313244; border-radius: 6px; padding: 5px 12px;
+            color: #a6e3a1; font-size: 13px; font-weight: 600;
+            text-decoration: none; transition: background 0.15s;
+        }}
+        .call-btn:hover {{ background: #45475a; }}
     </style>
     <div class="card">
         <div class="card-header">
@@ -250,8 +265,9 @@ def render_card(row):
             <span class="owner">오너가 {ownerprice}</span>
             <span class="mbprice">MB {mbprice}</span>
         </div>
+        {call_btn_html}
     </div>
-    """, height=170)
+    """, height=210)
 
 
 if check_password():
