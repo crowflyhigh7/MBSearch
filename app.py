@@ -195,30 +195,30 @@ body {
   body { padding: 8px; }
 }
 .mob-doc   { background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
-.mob-title { text-align: center; font-size: 18px; font-weight: bold; padding: 12px; border-bottom: 2px solid #333; letter-spacing: 4px; }
+.mob-title { text-align: center; font-size: 18px; font-weight: bold; padding: 14px 12px; border-bottom: 2px solid #333; letter-spacing: 4px; }
 .mob-car-row  { display: flex; border-bottom: 1px solid #ddd; }
-.mob-car-cell { flex: 1; padding: 7px 10px; border-right: 1px solid #ddd; }
+.mob-car-cell { flex: 1; padding: 9px 10px; border-right: 1px solid #ddd; }
 .mob-car-cell:last-child { border-right: none; }
 .mob-car-lbl { font-size: 10px; color: #888; }
 .mob-car-val { font-weight: bold; font-size: 14px; }
 .mob-tbl { width: 100%; border-collapse: collapse; }
 .mob-tbl tr { border-bottom: 1px solid #eee; }
-.mob-tbl td { padding: 7px 10px; vertical-align: middle; }
-.mob-lbl { font-size: 11px; color: #555; width: 45%; }
+.mob-tbl td { padding: 10px 10px; vertical-align: middle; }
+.mob-lbl { font-size: 13px; color: #222; width: 35%; }
 .mob-val { text-align: right; }
 .mob-input {
   width: 100%; border: none; border-bottom: 1px solid #ccc;
-  text-align: right; font-size: 13px; font-family: sans-serif;
+  text-align: right; font-size: 15px; font-family: sans-serif;
   background: transparent; padding: 2px 0;
 }
 .mob-input:focus { outline: none; border-bottom-color: #e63946; }
 .mob-ev-row td  { background: #f8f8ff; }
-.mob-ev-area    { display: flex; align-items: center; gap: 6px; font-size: 11px; justify-content: flex-end; }
+.mob-ev-area    { display: flex; align-items: center; gap: 6px; font-size: 12px; justify-content: flex-end; }
 .mob-ev-area label { cursor: pointer; }
 .mob-total-row  { background: #fff0f0; }
 .mob-total-lbl  { font-size: 13px; font-weight: bold; color: #333; }
 .mob-total-val  { font-size: 18px; font-weight: bold; color: #e63946; text-align: right; }
-.mob-acct { background: #e8f0e0; padding: 10px; font-size: 12px; font-weight: bold; text-align: center; border-top: 1px solid #ccc; }
+.mob-acct { background: #e8f0e0; padding: 13px 10px; font-size: 12px; font-weight: bold; text-align: center; border-top: 1px solid #ccc; }
 
 /* ── 이미지 결과 ── */
 #img-result { display: none; margin-top: 16px; }
@@ -396,7 +396,7 @@ body {
       </td>
     </tr>
     <tr>
-      <td class="mob-lbl">등록대행수수료<br><span style="color:#aaa;font-size:10px;">+계약서비·매도비·인증지대</span></td>
+      <td class="mob-lbl">등록대행수수료<br><span style="color:#888;font-size:11px;">+계약서비·매도비·인증지대</span></td>
       <td class="mob-val">
         <input class="mob-input" id="m_reg_fee" value="450,000" oninput="mobRecalcTotal()">
       </td>
