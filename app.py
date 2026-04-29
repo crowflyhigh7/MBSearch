@@ -172,7 +172,12 @@ body {
 .ft-amt   { text-align: center; width: 20%; }
 .ft-note  { font-size: 11px; color: #222; line-height: 1.5; }
 .ft-big   { text-align: center; font-size: 18px; font-weight: bold; }
-.ft-total { text-align: center; font-size: 18px; font-weight: bold; }
+.ft-total { text-align: center; font-size: 18px; font-weight: bold; display: flex; align-items: baseline; justify-content: center; gap: 3px; }
+/* 원 단위 */
+.amt-wrap { display: flex; align-items: baseline; gap: 3px; }
+.amt-wrap > input { flex: 1; min-width: 0; width: auto; }
+.won    { font-size: 10px; color: #444; white-space: nowrap; flex-shrink: 0; }
+.won-lg { font-size: 13px; color: #444; white-space: nowrap; flex-shrink: 0; }
 .ft-acct td { background: #e8f0e0; font-weight: bold; }
 .ft-co td   { text-align: center; font-size: 16px; font-weight: bold; padding: 8px; }
 
@@ -313,13 +318,13 @@ body {
   <tr>
     <td class="ft-lbl">성능상태<br>책임보험료</td>
     <td class="ft-amt">
-      <input class="fee-input" id="insurance" value="100,000" oninput="recalcTotal()">
+      <input class="fee-input" id="insurance" value="__FEE_INSURANCE__" oninput="recalcTotal()">
     </td>
     <td class="ft-note">근거 1) 자동차관리법 제58조의 4에 의해 의무적으로 발생하는 비용</td>
   </tr>
   <tr>
     <td class="ft-lbl">합&nbsp;&nbsp;&nbsp;&nbsp;계</td>
-    <td colspan="2" class="ft-total" id="pc_total">__FEE_TOTAL__</td>
+    <td colspan="2" class="ft-total"><span id="pc_total">__FEE_TOTAL__</span><span class="won-lg">원</span></td>
   </tr>
   <tr class="ft-acct">
     <td class="ft-lbl">계좌번호</td>
@@ -416,12 +421,12 @@ body {
     <tr>
       <td class="mob-lbl">성능상태책임보험료</td>
       <td class="mob-val">
-        <input class="mob-input" id="m_insurance" value="100,000" oninput="mobRecalcTotal()">
+        <input class="mob-input" id="m_insurance" value="__FEE_INSURANCE__" oninput="mobRecalcTotal()">
       </td>
     </tr>
     <tr class="mob-total-row">
       <td class="mob-total-lbl">합 계</td>
-      <td class="mob-total-val" id="mob_total">__FEE_TOTAL__</td>
+      <td class="mob-total-val"><span id="mob_total">__FEE_TOTAL__</span><span class="won-lg" style="font-size:12px;color:#e63946;"> 원</span></td>
     </tr>
   </table>
   <div class="mob-acct">계좌번호 : 국민은행 658101-01-671081<br>(예금주 : 카스갤러리)</div>
@@ -541,6 +546,18 @@ function downloadImg() {
   a.click();
 }
 
+// 모든 금액 입력 뒤에 '원' 단위 추가
+document.querySelectorAll('.fee-input, .mob-input').forEach(function(inp) {
+  var wrap = document.createElement('div');
+  wrap.className = 'amt-wrap';
+  inp.parentNode.insertBefore(wrap, inp);
+  wrap.appendChild(inp);
+  var won = document.createElement('span');
+  won.className = inp.classList.contains('fee-input-big') ? 'won-lg' : 'won';
+  won.textContent = '원';
+  wrap.appendChild(won);
+});
+
 // input 변경 시 attribute 동기화 (html2canvas 대응)
 document.querySelectorAll('input').forEach(function(inp) {
   inp.addEventListener('input', function() {
@@ -659,7 +676,11 @@ def render_card(row):
         mbprice_num = 0
     acq_tax = round(mbprice_num * 0.07)
     bond    = round(mbprice_num * 0.005)
-    total   = acq_tax + bond + 450000 + 100000 + 300000 + 100000
+    try:
+        insurance = int(str(row.get("insur", "")).replace(",", "").replace(" ", "")) or 100000
+    except (ValueError, TypeError):
+        insurance = 100000
+    total = acq_tax + bond + 450000 + 100000 + 300000 + insurance
 
     def fmt(n):
         return f"{n:,}"
@@ -685,6 +706,7 @@ def render_card(row):
                 .replace("__FEE_TAX_BASE__",  fmt(mbprice_num))
                 .replace("__FEE_ACQ_TAX__",   fmt(acq_tax))
                 .replace("__FEE_BOND__",       fmt(bond))
+                .replace("__FEE_INSURANCE__",  fmt(insurance))
                 .replace("__FEE_TOTAL__",      fmt(total)))
     # json.dumps 후 </script> 가 HTML 파서에 의해 script 블록을 조기 종료시키는 것을 방지
     fee_json = json.dumps(fee_html).replace("</", "<\\/")
