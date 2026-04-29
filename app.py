@@ -525,9 +525,11 @@ function convertToImage() {
         var s = clonedDoc.createElement('span');
         s.textContent = inp.value;
         var big = inp.className.indexOf('big') >= 0;
+        var mob = inp.className.indexOf('mob') >= 0;
+        var fs  = big ? '18px' : (mob ? '15px' : '13px');
         s.style.cssText = big
-          ? 'font-size:18px;font-weight:bold;display:block;text-align:center;'
-          : 'font-size:13px;display:block;text-align:right;padding:3px 6px;';
+          ? 'font-size:18px;font-weight:bold;display:block;text-align:center;flex:1;min-width:0;'
+          : 'font-size:' + fs + ';display:block;text-align:right;padding:3px 6px;flex:1;min-width:0;';
         inp.parentNode.replaceChild(s, inp);
       });
     }
