@@ -8,7 +8,7 @@ import pandas as pd
 SPREADSHEET_ID = "1qis9zW7EHPgBRQLAIuOhEas3vJOzdX0tqXCwh1CScWE"
 PASSWORD = "mb1234"
 
-SEARCH_COLS = ["cat_make", "cat_model", "cat_submodel", "cat_grade", "cat_subgrade", "platenumber"]
+SEARCH_COLS = ["cat_make", "cat_model", "cat_submodel", "cat_grade", "cat_subgrade", "platenumber", "owner_name"]
 DISPLAY_COLS = [
     "cat_submodel", "cat_grade", "cat_subgrade", "platenumber",
     "modelyear", "reg_year", "reg_month", "reg_date",
@@ -731,7 +731,7 @@ def render_card(row):
     components.html(html, height=card_height)
 
 
-if check_password():
+if True:
     query = st.text_input("🔍 검색", placeholder="차량명, 번호판, 등급 등으로 검색...")
 
     with st.spinner("데이터 불러오는 중..."):
