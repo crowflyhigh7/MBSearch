@@ -56,7 +56,7 @@ CARD_HTML = """<!DOCTYPE html>
 }
 .plate:active { opacity: 0.6; }
 .owner   { color: #a6adc8; font-size: 14px; }
-.mbprice { color: #e63946; font-weight: 900; font-size: 22px; }
+.mbprice { color: __MBPRICE_COLOR__; font-weight: 900; font-size: 22px; }
 .call-btn {
   display: inline-flex; align-items: center; gap: 6px;
   background: #313244; border-radius: 6px; padding: 5px 12px;
@@ -71,6 +71,9 @@ CARD_HTML = """<!DOCTYPE html>
   <div class="card-header">
     <div class="card-title">__CARD_TITLE__</div>
     <div class="btn-group">
+      <button class="icon-btn" onclick="onCheckBtn()" title="확인">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      </button>
       <button class="icon-btn" onclick="openFeeWindow()" title="이전비 내역서">
         <span class="fee-icon">📋</span>
       </button>
@@ -104,6 +107,24 @@ CARD_HTML = """<!DOCTYPE html>
 <script id="fee-data" type="application/json">__FEE_DATA_JSON__</script>
 
 <script>
+function onCheckBtn() {
+  var plate = '__PLATE__';
+  window.open('https://carmanager.co.kr/Car/Data?tbxSearchCarNumber=' + encodeURIComponent(plate), '_blank');
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(plate);
+  } else {
+    var t = document.createElement('textarea');
+    t.value = plate; t.style.cssText = 'position:fixed;opacity:0;';
+    document.body.appendChild(t); t.focus(); t.select();
+    try { document.execCommand('copy'); } catch(e) {}
+    document.body.removeChild(t);
+  }
+}
+
+function setContract() {
+  window.parent.postMessage({action:'setContract', plate:'__PLATE__'}, '*');
+}
+
 function openFeeWindow() {
   var html = JSON.parse(document.getElementById('fee-data').textContent);
   var blob = new Blob([html], { type: 'text/html; charset=utf-8' });
@@ -608,8 +629,7 @@ def format_number(val):
         return val
 
 
-@st.cache_data(ttl=120)
-def load_data():
+def _get_sheet():
     scopes = [
         "https://spreadsheets.google.com/feeds",
         "https://www.googleapis.com/auth/drive",
@@ -619,7 +639,12 @@ def load_data():
     except (KeyError, FileNotFoundError):
         creds = Credentials.from_service_account_file("credentials.json", scopes=scopes)
     client = gspread.authorize(creds)
-    sheet = client.open_by_key(SPREADSHEET_ID).worksheet("st_stocklist")
+    return client.open_by_key(SPREADSHEET_ID).worksheet("st_stocklist")
+
+
+@st.cache_data(ttl=120)
+def load_data():
+    sheet = _get_sheet()
     rows = sheet.get_all_values()
     if not rows:
         raise ValueError("시트에 데이터가 없습니다.")
@@ -627,6 +652,19 @@ def load_data():
     df = pd.DataFrame(rows[1:], columns=headers)
     df.columns = df.columns.str.strip()
     return df
+
+
+def update_status(plate, new_status):
+    sheet = _get_sheet()
+    headers = [h.strip() for h in sheet.row_values(1)]
+    plate_col = headers.index("platenumber") + 1
+    status_col = headers.index("status") + 1
+    all_plates = sheet.col_values(plate_col)
+    for i, val in enumerate(all_plates[1:], start=2):
+        if str(val).strip() == str(plate).strip():
+            sheet.update_cell(i, status_col, new_status)
+            return True
+    return False
 
 
 def check_password():
@@ -694,12 +732,25 @@ def render_card(row):
                  'a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.82'
                  'a16 16 0 0 0 6.29 6.29l.97-.97a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7'
                  'A2 2 0 0 1 22 16.92z"/></svg>')
+    mbprice_color = '#808080' if status == '계약금' else '#e63946'
+
+    contract_icon_btn = (
+        '<button class="icon-btn" onclick="setContract()" title="계약금" style="margin-left:auto;flex-shrink:0;">'
+        '<svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>'
+        '<line x1="7" y1="7" x2="7.01" y2="7"/></svg>'
+        '</button>'
+    )
     if owner_phone:
-        call_btn_html = (f'<div class="row" style="margin-top:6px;">'
-                         f'<a class="call-btn" href="tel:{owner_phone}">'
-                         f'{phone_svg} {owner_name} / {owner_phone}</a></div>')
+        call_btn_html = (
+            f'<div class="row" style="margin-top:6px;flex-wrap:nowrap;justify-content:space-between;">'
+            f'<a class="call-btn" href="tel:{owner_phone}">{phone_svg} {owner_name} / {owner_phone}</a>'
+            f'{contract_icon_btn}</div>'
+        )
     else:
-        call_btn_html = ""
+        call_btn_html = (
+            f'<div style="display:flex;justify-content:flex-end;margin-top:8px;">'
+            f'{contract_icon_btn}</div>'
+        )
 
     # 이전비 내역서 HTML 생성 후 JSON 인코딩 (새 창용)
     fee_html = (FEE_WINDOW_HTML
@@ -714,6 +765,7 @@ def render_card(row):
     fee_json = json.dumps(fee_html).replace("</", "<\\/")
 
     html = (CARD_HTML
+            .replace("__MBPRICE_COLOR__", mbprice_color)
             .replace("__CARD_TITLE__",   title)
             .replace("__STOCK_ID__",     stock_id)
             .replace("__PLATE__",        plate)
@@ -727,11 +779,21 @@ def render_card(row):
             .replace("__CALL_BTN__",     call_btn_html)
             .replace("__FEE_DATA_JSON__", fee_json))
 
-    card_height = 210 if owner_phone else 185
+    card_height = 210 if owner_phone else 220
     components.html(html, height=card_height)
 
 
 if True:
+    contract_plate = st.query_params.get("contract_plate", "")
+    if contract_plate:
+        try:
+            update_status(contract_plate, "계약금")
+            st.cache_data.clear()
+        except Exception as e:
+            st.error(f"상태 업데이트 실패: {e}")
+        st.query_params.clear()
+        st.rerun()
+
     query = st.text_input("🔍 검색", placeholder="차량명, 번호판, 등급 등으로 검색...")
 
     with st.spinner("데이터 불러오는 중..."):
@@ -756,5 +818,19 @@ if True:
     if result.empty:
         st.info("검색 결과가 없습니다.")
     else:
+        # 카드 iframe → 부모 페이지 통신 브리지 (postMessage → meta refresh)
+        components.html("""<script>
+(function(){
+  if(window.parent._mbContractBridge) return;
+  window.parent._mbContractBridge = true;
+  window.parent.addEventListener('message', function(e){
+    if(!e.data || e.data.action !== 'setContract') return;
+    var m = window.parent.document.createElement('meta');
+    m.httpEquiv = 'refresh';
+    m.content = '0;url=?contract_plate=' + encodeURIComponent(e.data.plate);
+    window.parent.document.head.appendChild(m);
+  });
+})();
+</script>""", height=0)
         for _, row in result.iterrows():
             render_card(row)
